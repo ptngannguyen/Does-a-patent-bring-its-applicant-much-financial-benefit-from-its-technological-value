@@ -1,0 +1,1 @@
+# Does-a-patent-bring-its-applicant-much-financial-benefit-from-its-technological-value
