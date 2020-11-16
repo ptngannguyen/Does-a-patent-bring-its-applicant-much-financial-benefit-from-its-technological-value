@@ -1,0 +1,998 @@
+---
+title: "Research Seminar: Does a patent bring its applicant much financial benefit from its technological value?"
+author: "Phuong Thao Ngan Nguyen"
+date: "6/25/2019"
+geometry: "left=2.5cm,right=2.5cm,top=2cm,bottom=2cm"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 15px;
+      font-family: "Times New Roman", Times, serif;
+      text-align: justify
+  }
+td {  /* Table  */
+  font-size: 15px;
+}
+h1.title {
+  font-size: 28px;
+}
+h1 { /* Header 1 */
+  font-size: 15px;
+}
+h2 { /* Header 2 */
+  font-size: 15px;
+}
+h3 { /* Header 3 */
+  font-size: 15px;
+}
+code.r{ /* Code block */
+    font-size: 15px;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 15px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+
+```{r, include=FALSE}
+# set working directory
+setwd("/Users/nguyenphuongthaongan/Downloads/Patnet_data")
+## Read data
+library(readr)
+REGPAT_Regions_NUTS3_TL3 <- read_delim("REGPAT_201803/REGPAT_Regions_NUTS3_TL3.txt",
+                                       "|", escape_double = FALSE, trim_ws = TRUE)
+EPO_Inv_reg <- read_delim("REGPAT_201803/201803_EPO_Inv_reg.txt","|", 
+                          escape_double = FALSE, trim_ws = TRUE)
+EPO_IPC <- read_delim("REGPAT_201803/201803_EPO_IPC.txt","|", 
+                      escape_double = FALSE, trim_ws = TRUE)
+EP_Citations <- read_delim("Citations_201803/201803_EP_Citations.txt","|", 
+                           escape_double = FALSE, trim_ws = TRUE)
+OECD_PATENT_QUALITY_EPO <- read_delim("Indicators_201803/201803_OECD_PATENT_QUALITY_EPO.txt","|", 
+                                      escape_double = FALSE, trim_ws = TRUE)
+```
+
+
+# __1. Introduction__
+
+In these days and ages, patents with their property of technological value play a more and more important role in the developing knowledge-based economy. A patent with high technological importance not only provides the knowledge foundation for the subsequent innovations but also helps these patents save R&D costs and shorten their R&D process. Besides this big social value, the R&D process for a patent is very expensive and takes years. However, does a patent bring its applicant much financial benefit from its technological value? Answering this question is the main purpose of this seminar. 
+
+To measure the technological value of patents, we use a familiar indicator in technological importance researches: forward citations. Technological progress is a cumulative process in which each patent serves as a shoulder for subsequent innovations and the more forward citations a patent has, the more giant its shoulder is (Nagaoka et al. (2010)). Due to this idea, many researches uses the number of direct forward citations as an indicator for patents’ technological value. However, imagine that A shoulders B and B shoulders C. A should be considered as shouldering both B and C instead of only B. Therefore, using the number of direct forward citations is not really efficient to measure patents’ technological value. Instead, we should use the number of multi-stage forward citations. Actually, the analysis of multi-stage forward citations is not a brand new idea. In their research, Iwan von Wartburg et al. (2005) also built the development of the citation network (multi-stage) in the automotive sector and based on expert ratings to evaluate the patents' value. However, to the best of our knowledge, there is no research on the number of multi-stage forward citations focusing on the financial benefit of patents’ technological value. Moreover, our work also includes newest data, which will gives a closer look at the recent situation patent development. 
+
+To answer whether a patent brings its applicant much financial benefit from its technological value, we calculate the correlation between the patents’ numbers of multi-stage forward citations and their numbers of renewals. This is similar to the idea in the research by Harhoff et al. (1999), which analyses data of direct citations and renewals to find the relationship between citation frequency and the value of patented inventions. Patent renewal indicator is also proven to be useful in estimating patent value by Griliches (1990). The idea for our work is that when a patent A is cited by other patents, these other patents’ inventors have to pay for the applicant of A, which we call the financial benefit from A’s technological value; therefore, with the simple assumption that the applicant would renew a patent when owning the patent generates positive profit from its technological value (the revenue from its technological value is greater than renewal fee), which is defined as when "the patent bring its applicant *much* financial benefit from its technological value" in our topic question, the more multi-stage forward citation A has, the more renewals it should have to protect the source of financial benefit of its technological value.
+
+In this seminar, we work with patent applications by at least one inventor in Germany during the period 1985-2007, detailed explanation will be given in part 3. The data is provided by OECD Regrat Database for EPO applications. We will test 3 hypotheses. Hypothesis 1 is that the number of direct forward citations does not show the true technological value of patents as efficiently as the number of multi-stage forward citations does. This hypothesis is to prove that the number of multi-stage forward citations is the more efficient indicator for the patent’s technological value rather than the number of direct forward citations. Hypothesis 2 is that the more multi-stage forward citations a patent has, the more renewals it has. This hypothesis is to answer our topic question. Hypothesis 3 is that the correlation between the number of within-IPC3-class multi-stage forward citations and the number of renewals is higher than the correlation between the number of overall multi-stage forward citations and the number of renewals. This hypothesis is to test whether taking a patent’s technological fields into account affects the result of hypothesis 2. In OECD Regrat Database, technological field are called IPC classes. In our work, we group IPC classes into bigger technological classes by using only the first 3 digits in the codes of IPC classes in raw data. From now, let's call these bigger classes IPC3 classes for simplicity.
+
+In the next parts, we will first define more clearly the variables using in our analysis and explain theoretical idea from which hypotheses are created. Next, we spend most of the seminar focusing on analyzing the result. Finally, we conclude by summarizing our findings.
+
+# __2. Theoretical framework__
+
+##&nbsp;&nbsp;&nbsp; 2.1. Multi-stage forward citations
+
+When a patent, let’s name it “stem patent”, is directly cited by other patents, we consider that stem patent as having one forward citation stage. Then we consider these patents citing the first patent the “stem patents” and find out if they are cited by other patents and keep counting the number of stages. The number of multi-stage forward citations are the accumulated number of citations over stages of the stem patent. For example, A is cited by B and C; B is cited by D, E and F while C is cited G; G is cited by H. In this case, A is consider as having 3 forward citation stages: The first stage includes B and C while the second stage includes D, E, F and G and the third stage is H.  The number of direct forward citations of A is 2 (B and C) but the number of multi-forward citations of A is 7 (A has 2 direct forward citations; B has 3 direct forward citations; C has 1 direct forward citations; D, E, and F has 0 direct forward citation and G has 1 direct forward citations). 
+
+The number of direct forward citations are often used as an indicator for the patent’s technological value. However, as mentioned in part 1, each patent serves as a shoulder for its citing patents to stand on. The more multi-stage forward citations the patent has, the more giant the shoulder and the more technologically important that patent is. Not only the patent’s direct citing patents but also its multi-stage citing patents benefit from the technological knowledge of that patents and therefore shorten their R&D process as well as save the expensive cost for R&D. Therefore, the number of multi-stage forward citations should be the indicator for the patent’s technological value rather than the number of direct forward citations. To confirm this theoretical idea, we would like to test the hypothesis 1: The number of direct forward citations does not show the true technological value of these stem patents as efficiently as the number of multi-stage forward citations does.
+
+However, using the number of multi-stage forward citations as an indicator for the patents’ technological value suffers from the truncation problem, which means that the older patents tend to have more forward citations than the younger patents. Fortunately, OECD (2008) finds that USPTO patents receive more than 50% of their forward citations within their first 5 years and the rest 50% in the rest of their life. Therefore, to deal with truncation problem, only forward citations within the first 5 or so years of patents should be counted (Nagaoka et al. (2010)). 
+
+Nagaoka et al. (2010) also finds that the patent citation data creating process are different among patent system. For example, for US patent system, the citations are made by both the applicant and the examiners while they are made by only the examiners in EPO system. The EPO examiners tend to provides only the most relevant patents as citations. Therefore, our work uses EPO data for not miscalculating the number of multi-stage forward citations of patents and overestimating their technological values.
+
+##&nbsp;&nbsp;&nbsp; 2.2. Patent renewals
+
+Each patent has statutory period of 20 years, during which the applicants have to pay annual renewal fee from the third year to keep the patent protected from other's usage. This fee usually increases over time in most patent system. Not every patent got renewed annually because "the firm will not renew the patent unless this benefit exceeds the renewal fee" (Jyh-Bang Jou, 2018). 
+The more technological value a patent has, the more renewals it should have to benefit from its technological value. If the hypothesis 1 is proved, which means that the number of multi-stage forward citations can be uses as a indicator for the patent’s technological value, to test the theoretical idea that we have just mentioned, we should test the hypothesis 2: The more multi-stage forward citations a patent has, the more renewals it has.
+
+Besides, it is possible that patents tend to mainly serve in their technological fields and receive the majority of their financial benefit of technological values from cited patents in the same IPC3 classes. Therefore, there should be a stronger correlation between the number of within-IPC3-class multi-stage forward citations and the number of renewals of a patent than the correlation between its number of overall multi-stage forward citations and the number of renewals. To test this idea, we test the hypothesis 3: The correlation between the number of within-IPC3-class multi-stage forward citations and the number of renewals is higher than the correlation between the number of overall multi-stage forward citations and the number of renewals.
+
+It should also be noted that patent renewal analysis suffer the problem of timeliness which is that only patents finishing their lifetime (20 years) can provide efficient data for their renewals (Nagaoka et al. (2010)).
+
+# __3. Data processing__
+
+```{r, include=FALSE}
+### Create EPO_IPC table for only patents by at least 1 inventor located in Germany
+# All application IDs for patents by at least 1 inventor located in Germany
+Appln_id_DE <- unique(EPO_Inv_reg$Appln_id[EPO_Inv_reg$Ctry_code == "DE"])
+# EPO_IPC table for only patents by at least 1 inventor located in Germany
+EPO_IPC_DE <- unique(EPO_IPC[EPO_IPC$Appln_id %in% Appln_id_DE,c("Appln_id", "Prio_Year","IPC")])
+# Take a overall look at the number of patents over time in Germany 
+# Get the earliest and the lasted year of patents
+min(EPO_IPC_DE$Prio_Year) # which is 1977
+max(EPO_IPC_DE$Prio_Year) # which is 2017
+```
+
+We will work with the OECD Regrat Database. Due to limitation of resource and seminar research, we need to narrow down the data used in our work. We collect only EPO applications by at least one inventor in Germany. The raw data provided by OECD for these patents is from 1977 to 2017.
+We now take a closer look at development of patents in Germany from 1977 to 2017 to identify reasonable time period for our work including forward citation analysis and patent renewal analysis.
+
+##&nbsp;&nbsp;&nbsp; 3.1. Data for forward citation analysis
+
+```{r, include=FALSE}
+# Count the number of patents in each year in the whole time period
+Overall_look <- unique(EPO_IPC_DE[, c(1,2)])
+Overall_look <- aggregate(Overall_look$Appln_id, by = list(Overall_look$Prio_Year), FUN=length)
+names(Overall_look) <- c('Prio_Year', 'Patents_nbr')
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# A graph showing the number of patents over time in Germany from 1977 to 2017
+library(extrafont)
+# If you have not installed this package extrafont, please install it and run the code "font_import()"
+library(ggplot2)
+plot_overall_look_1 <- ggplot(Overall_look, aes(x=Prio_Year, y=Patents_nbr)) + 
+  geom_point(fill="darkblue", color="darkred") +
+  labs(x = "Priority Year", y = "Number of patents") + 
+  ggtitle("Graph 1. Number of patents over time in Germany from 1977 to 2017")
+plot_overall_look_1 + theme_dark() + theme(plot.title = element_text(hjust = 0.5, size = 11, 
+                                                                     face = "bold")) + 
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+```
+
+Graph 1 describes the number of patents over time in Germany from 1977 to 2017. As shown in Graph 1, the number of patents over time in Germany starts decreasing significantly from 2007. This might be due to the time lag between filing date and the approved date of the patents. Therefore, we should exclude the period after 2007 to avoid truncation problem. (1)
+
+##&nbsp;&nbsp;&nbsp; 3.2. Data for patent renewal analysis
+
+```{r, include=FALSE}
+### Create OECD_PATENT_QUALITY_EPO table for patent renewal information of only patents by at least 1 inventor located in Germany
+Renewal_DE <- OECD_PATENT_QUALITY_EPO[OECD_PATENT_QUALITY_EPO$appln_id %in% Appln_id_DE, 
+                                      c("appln_id", "renewal")]
+Renewal_DE <- merge(x=Renewal_DE, y=EPO_IPC_DE[,1:2], by.x="appln_id", by.y = "Appln_id", all.y=TRUE)
+# Take a look at the average renewals of patents in Germany over time
+Average_renewal_DE <- aggregate(Renewal_DE$renewal, by=list(Renewal_DE$Prio_Year), FUN=mean, na.rm=T, 
+                                na.action=T)
+names(Average_renewal_DE) <- c("Prio_Year", "Renewal_avg_nbr")
+Average_renewal_DE <- Average_renewal_DE[!is.na(Average_renewal_DE$Renewal_avg_nbr),]
+min(Average_renewal_DE$Prio_Year) # which is 1977
+max(Average_renewal_DE$Prio_Year) # which is 2015
+```
+
+Next step, we consider the renewal data for the EPO patents by at least one inventor in Germany, which is available only from 1977 to 2015 in OECD database. This sounds reasonable as applicants do not need to pay for renewal fee in the first 2 years, and the latest patents in our selected data were filed in 2017. As mentioned in part 2.2, only patents finishing their lifetime which lasts 20 years can provide efficient data for their renewals (Schankerman & Pakes (1986)). Therefore, we should take only patents before 1995.
+
+```{r, echo=FALSE}
+# A graph showing the average renewals of patents in Germany over time from 1977-2015
+plot_overall_look_2 <- ggplot(Average_renewal_DE, aes(x=Prio_Year, y=Renewal_avg_nbr)) + 
+  geom_point(fill="darkblue", color="darkred") +
+  labs(x = "Priority Year", y = "Average number of renewals") + 
+  ggtitle("Graph 2. Average number of patent renewals over time in Germany from 1977 to 2015")
+plot_overall_look_2 + theme_dark() + theme(plot.title = element_text(hjust = 0.5, size = 11, 
+                                                                     face = "bold")) + 
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+```
+
+Graph 2 illustrates a closer look at the the frequency of patent renewal over time and confirms that the average number of patent renewals over time in Germany starts decreasing significantly from 1995. It is consistent with the statutory period of 20 years of the protected patents, making recent patents have fewer renewals. Therefore, to avoid truncation problem we should not include the applications filed after 1995. (2)
+
+##&nbsp;&nbsp;&nbsp; 3.3. Overall data
+
+From (1) & (2), we should use data of patents in the time period from 1977 to 1995 as objects to calculate their number of multi-stage forward citations as well as their number of patent renewals. Due to our machine’s limited capacity, we choose the time period 1985-1995 for the cited patents.
+In terms of choosing time period for citing patents, according to part 2.1, 2007 should be the last year that we should take into account for forward citation analysis (after that patent data seems insufficient). As explained in part 2, we should use the forward citations within the first 5 or so years. Moreover, the final year in our data for cited patents is 1995. In this seminar, we try to count as many years as possible to calculate the forward-citation stages. Therefore, we will use forward citations within the first 12 years of the cited patents so that the patents in 1995 will have citing period til 2007.
+
+Although in part 4.1, we ignore the information of IPC3 classes of patents, in part 5.1, the information of IPC3 classes matters because we calculate the number of within-IPC3-class multi-stage forward citations. Therefore, we should eliminate patents with missing IPC3 class information even in part 4.1 so that we can have effective comparison between two parts.
+
+```{r, include=FALSE}
+### EPO_IPC table for patents by at least 1 inventor located in Germany from 1985 to 2007.
+EPO_IPC_DE_1985_2007 <- EPO_IPC_DE[EPO_IPC_DE$Prio_Year>=1985 & EPO_IPC_DE$Prio_Year<=2007, ]
+# Create 3-digit IPC column
+EPO_IPC_DE_1985_2007$IPC3 <- substr(EPO_IPC_DE_1985_2007$IPC,1,3)
+# Delete column IPC
+EPO_IPC_DE_1985_2007$IPC <- NULL
+# EPO_IPC table for patents by at least 1 inventor located in Germany from 1985 to 1995 (original patents that we will use for multi-stage forward citation and patent renewal analysises)
+EPO_IPC_DE_1985_1995 <- EPO_IPC_DE_1985_2007[EPO_IPC_DE_1985_2007$Prio_Year<=1995,]
+# Prepare data for merging
+# Cited patents
+IPC3_Cited <- unique(data.frame(Cited_app_id = EPO_IPC_DE_1985_1995$Appln_id, 
+                                Cited_IPC3 = EPO_IPC_DE_1985_1995$IPC3,
+                                Cited_Prio_Year = EPO_IPC_DE_1985_1995$Prio_Year))
+IPC3_Citing <- unique(data.frame(Citing_app_id = EPO_IPC_DE_1985_2007$Appln_id, 
+                                 Citing_IPC3 = EPO_IPC_DE_1985_2007$IPC3,
+                                 Citing_Prio_Year = EPO_IPC_DE_1985_2007$Prio_Year))
+
+
+### Create a dataframe of forward citations for patents by at least 1 inventor located in Germany from 1985 to 1995
+Citations <- unique(EP_Citations[EP_Citations$Cited_Appln_id %in% IPC3_Cited$Cited_app_id, 
+                                 c("Cited_Appln_id","Citing_appln_id")])
+# Change the names of columns to match with the prepared IPC3 tables
+names(Citations)[1] <- paste("Cited_app_id")
+names(Citations)[2] <- paste("Citing_app_id")
+# Eliminate all patents that are cited by themselves
+Citations <- unique(Citations[Citations$Cited_app_id!=Citations$Citing_app_id,])
+
+
+### Merge
+# We use right outer join table to make sure that the final dataframe will include EVEN the patents which are not cited
+Data_1 <- merge(x=Citations, y=IPC3_Cited, by='Cited_app_id', all.y= T)
+# We check whether there is any cited patent with missing information of IPC3
+sum(is.na(Data_1$Cited_IPC3)) # which is 17
+# Because our entity unit is IPC3 class, we remove these patents with missing IPC3 information
+Data_2 <- Data_1[complete.cases(Data_1[,3]),] # now we get the table Data_2 with 17 rows fewer than the dataframe Data_1 
+# We use left outer join table to make sure that the final dataframe will include ONLY the patents which cite at least one of patents in Data_1
+Data_3 <- merge(x=Data_2, y=IPC3_Citing, by='Citing_app_id', all.x = T)
+# Reorder the columns in Data_3
+Data_3 <- Data_3[,c("Cited_app_id", "Cited_IPC3", "Cited_Prio_Year", "Citing_app_id", "Citing_IPC3", "Citing_Prio_Year")]
+# Due to truncation problem, we only use forward citations within the first 12 years of the cited patents
+# First, we take from Data_3 patents which are cited by at least another patent and have full information of IPC3 classes, priority years as well as their citing patents' IPC3 classes and priority years. We store these patents in Data_4. In this step, we also eliminate patent couples having citing patents with misiing IPC3 class information like we have done with cited patents in the step of creating Data_2.
+Data_4 <- Data_3[complete.cases(Data_3),] # this are patents which are cited
+# We then remove all cited - citing patent couples in which citing patent has priority year larger than (cited patent's priority year + 12 years)
+Data_4 <- Data_4[Data_4$Citing_Prio_Year<=(Data_4$Cited_Prio_Year+12),]
+# Second, we take from Data_3 patents which have priority year information and are not cited. We store them in Data_5
+Data_5 <- Data_3[complete.cases(Data_3[,c(1:3)]) & is.na(Data_3[,4:6]),] # this are patents which are not cited
+# When using is.na to select some rows from a dataframe, R often create rows of NAs in the new dataframe.
+# Let's check
+Data_5[is.na(Data_5$Cited_app_id),]
+nrow(Data_5[is.na(Data_5$Cited_app_id),]) # which is 493974
+# Remove these rows of NA values
+Data_5 <- Data_5[!is.na(Data_5$Cited_app_id),]
+# Finally, we combine Data_4 and Data_5
+Data <- rbind(Data_4, Data_5) # this is the full data that we will use for forward citation analysis in both part 4.1 and part 5.1.
+```
+
+# __4. Correlation between the number of multi-stage forward citations and the number of patent renewals__
+
+##&nbsp;&nbsp;&nbsp; 4.1. Multi-stage forward citations
+
+In this part we need to calculate the number of multi-stage forward citations that each patent has regardless of the IPC3 classes. 
+
+While counting the number of multi-stage forward citations of patents, we find that there are many couples of patents in which patents directly or indirectly cite each other. For example, A is cited by B, B is cited by C and C is also cited by A. This becomes a problem for the counting process. Therefore, when we have a new citing patent that is cited by one of its multi-stage cited patents like that, we discard it, and stop the counting. In this sense, A will have only 2 forward citation stages in our analysis, and C is NOT cited by A anymore in the process of counting the number of multi-stage forward citations for A. We should therefore reduce the number of direct forward citations of C by 1; however, this step is very complicating and causes difficulty for the calculating process due to inconsistency in the number of forward citations of C among rows in the dataframe. Therefore, for simplicity, we would like to keep the true number of direct forward citations of C. In case C is also cited by D (not just A), then the counting for the route from A till D is still going on, i.e. 3 stages. That makes sure we will not miscalculate the stages.
+
+```{r, include=FALSE}
+### Create data for part 4.1
+# In part 4.1, we only need Cited_app_id and Citing_app_id for calculating the number of multi-stage forward citations of patents
+Data_p4.1 <- unique(Data[,c("Cited_app_id", "Citing_app_id")])
+
+
+### Calculate the number of direct forward citations for each patent
+Data_p4.1$Citation_nbr[is.na(Data_p4.1$Citing_app_id)] <- 0
+Data_p4.1$Citation_nbr[!is.na(Data_p4.1$Citing_app_id)] <- 1
+Citation_nbr_1s_1 <- aggregate(Data_p4.1$Citation_nbr, by= list(Data_p4.1$Cited_app_id), FUN=sum)
+names(Citation_nbr_1s_1) <- c("App_id", "Citation_nbr_1s")
+
+
+### Calculate the number of multi-stage forward citations for each patent
+# Create a dataframe of these stem patents along with their forward citations
+Citation_nbr_mul_1 <- Data_p4.1[,c(1,2)] 
+names(Citation_nbr_mul_1) <- c("App_id", "App_id_1")
+# Add the number of direct forward citations for stem patents
+Citation_nbr_mul_1 <- merge(x=Citation_nbr_mul_1, y= Citation_nbr_1s_1, by='App_id', all.x=TRUE)
+names(Citation_nbr_mul_1)[3] <- "Nbr"
+# Add the number of direct forward citations for citing patents
+Citation_nbr_mul_1 <- merge(x=Citation_nbr_mul_1, y=Citation_nbr_1s_1, by.x='App_id_1', 
+                            by.y = 'App_id', all.x=T)
+names(Citation_nbr_mul_1)[4] <- "Nbr_1"
+# Fix the mistake of space in data values in the column Nbr_1
+library(stringr)
+str_replace_all(string=Citation_nbr_mul_1$Nbr_1, pattern=" ", repl="")
+
+
+### Now we add the citing patents for citing patents in the dataframe Citation_nbr_mul_1 in a more general way
+# Add the citing patents for the lasted citing patents in the dataframe Citation_nbr_mul_1
+Citation_nbr_mul_1 <- merge(x=Citation_nbr_mul_1, y=Data_p4.1[,c(1,2)], 
+                            by.x=names(Citation_nbr_mul_1)[1], 
+                            by.y='Cited_app_id', all.x=T)
+names(Citation_nbr_mul_1)[ncol(Citation_nbr_mul_1)] <- paste("App_id_", ncol(Citation_nbr_mul_1)%/%2)
+# Add the number of direct forward citations of the new citing patents that we have just added
+Citation_nbr_mul_1 <- merge(x=Citation_nbr_mul_1, y=Citation_nbr_1s_1, 
+                            by.x= names(Citation_nbr_mul_1)[ncol(Citation_nbr_mul_1)], 
+                            by.y = 'App_id', all.x=T)
+names(Citation_nbr_mul_1)[ncol(Citation_nbr_mul_1)] <- paste("Nbr_", ncol(Citation_nbr_mul_1)/2-1)
+# Fix the mistake of space in column names and data in the new column of citation numbers
+str_replace_all(string=Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)], pattern=" ", repl="")
+names(Citation_nbr_mul_1)<-str_replace_all(string=names(Citation_nbr_mul_1), pattern=" ", repl="")
+# Remove all new citing patents that are their cited patents' multi-stage cited patents
+Citation_nbr_mul_1[] <- t(apply(Citation_nbr_mul_1, 1, function(x) replace(x, duplicated(x, fromLast = TRUE) & 
+                                                                             seq_along(x) == 1, NA)))
+# Change the values of the number of direct forward citations of these patents into NA
+Citation_nbr_mul_1[is.na(Citation_nbr_mul_1[,1]),ncol(Citation_nbr_mul_1)] <- NA
+# Calculate the sum of the newest column of direct forward citation numbers
+sum(as.numeric(Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)]), na.rm=T)
+
+
+### Repeat until we get the result of 0 for the last query of the code paragraph 'sum(as.numeric(Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)]), na.rm=T)'. It means that all elements in the final column of the dataframe Citation_nbr_mul_1 have NA values. In other words, none of the last citing patents are cited.
+while (sum(as.numeric(Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)]), na.rm=T)!=0) {
+  Citation_nbr_mul_1 <- merge(x=Citation_nbr_mul_1, y=Data_p4.1[,c(1,2)], 
+                              by.x=names(Citation_nbr_mul_1)[1], 
+                              by.y='Cited_app_id', all.x=T)
+  names(Citation_nbr_mul_1)[ncol(Citation_nbr_mul_1)] <- paste("App_id_", ncol(Citation_nbr_mul_1)%/%2)
+  Citation_nbr_mul_1 <- merge(x=Citation_nbr_mul_1, y=Citation_nbr_1s_1, 
+                              by.x= names(Citation_nbr_mul_1)[ncol(Citation_nbr_mul_1)], 
+                              by.y = 'App_id', all.x=T)
+  names(Citation_nbr_mul_1)[ncol(Citation_nbr_mul_1)] <- paste("Nbr_", ncol(Citation_nbr_mul_1)/2-1)
+  str_replace_all(string=Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)], pattern=" ", repl="")
+  names(Citation_nbr_mul_1)<-str_replace_all(string=names(Citation_nbr_mul_1), pattern=" ", repl="")
+  Citation_nbr_mul_1[] <- t(apply(Citation_nbr_mul_1, 1, function(x) replace(x, duplicated(x, fromLast = TRUE) & 
+                                                                               seq_along(x) == 1, NA)))
+  Citation_nbr_mul_1[is.na(Citation_nbr_mul_1[,1]),ncol(Citation_nbr_mul_1)] <- NA
+}
+
+
+### Copy the result for later using
+Citation_nbr_mul_1_copy <- Citation_nbr_mul_1
+
+
+### Calculate the multi-stage forward citation numbers for the stem patents
+# Remove the unnecessary columns for counting (The last citing patents and their direct forward citation numbers are not neccessary anymore because they are counted in the direct forward citation numbers of their direct cited patents. Since now, their direct cited patents become the last citing patents in the dataframe until these direct cited patents are removed in the next time repeating the code, and so on)
+Citation_nbr_mul_1[,c(1,ncol(Citation_nbr_mul_1))] <- NULL
+# Change NA values into 0
+Citation_nbr_mul_1[is.na(Citation_nbr_mul_1)] <- 0
+
+
+### Accumulate the number of citations starting from the last citing patents
+# First, we create an additional dataframe Plus_1 to contain the number of 2-stage forward citations
+Plus_1 <- unique(data.frame(Citation_nbr_mul_1[,c(2,1,ncol(Citation_nbr_mul_1))]))
+Plus_1<-aggregate(as.numeric(Plus_1[,3]), by=list(Plus_1[,1]), FUN=sum)
+# After that, we don't need the ID as well as the citation number of the last citing patents anymore.
+# So we remove the unnecessary columns for counting
+Citation_nbr_mul_1[,c(1,ncol(Citation_nbr_mul_1))] <- NULL
+Citation_nbr_mul_1 <- unique(Citation_nbr_mul_1)
+# Name the columns of the dataframe Plus_1 the same as the first columns of the dataframe Citation_nbr_mul_1 to prepare for merge
+names(Plus_1) <- c(names(Citation_nbr_mul_1)[1],'Nbr_plus')
+# Merge
+Citation_nbr_mul_1<-merge(x=Citation_nbr_mul_1, y=Plus_1, by=names(Citation_nbr_mul_1)[1], all.x=T)
+# Calculate the multi-stage citation number of the last citing patents in the dataframe Citation_nbr_mul_1 
+Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)-1] <- as.numeric(Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)-1]) + 
+  as.numeric(Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)])
+# Delete the column added from dataframe Plus_1
+Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)] <- NULL
+
+
+### Repeat until Nbr is the final column for the number of multi-stage forward citations, in other words, until the dataframe Citation_nbr_mul_1 contains only 2 variables (columns).
+while(ncol(Citation_nbr_mul_1)>2) {
+  Plus_1 <- unique(data.frame(Citation_nbr_mul_1[,c(2,1,ncol(Citation_nbr_mul_1))]))
+  Plus_1<-aggregate(as.numeric(Plus_1[,3]), by=list(Plus_1[,1]), FUN=sum)
+  Citation_nbr_mul_1[,c(1,ncol(Citation_nbr_mul_1))] <- NULL
+  Citation_nbr_mul_1 <- unique(Citation_nbr_mul_1)
+  names(Plus_1) <- c(names(Citation_nbr_mul_1)[1],'Nbr_plus')
+  Citation_nbr_mul_1<-merge(x=Citation_nbr_mul_1, y=Plus_1, by=names(Citation_nbr_mul_1)[1], all.x=T)
+  Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)-1] <- as.numeric(Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)-1]) + 
+    as.numeric(Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)])
+  Citation_nbr_mul_1[,ncol(Citation_nbr_mul_1)] <- NULL
+}
+```
+
+```{r, include=FALSE}
+### Bar graph for the number of multi-stage forward citations of stem patents
+# Count the number of stem patents for each type of multi-stage forward citation number
+Citation_nbr_mul_1_sum <-aggregate(Citation_nbr_mul_1$App_id, by=list(Citation_nbr_mul_1$Nbr), length)
+# Copy for appendix
+Citation_nbr_mul_1_sum_copy <- Citation_nbr_mul_1_sum
+# Change the names of columns of the dataframe Citation_nbr_mul_1_sum_copy
+names(Citation_nbr_mul_1_sum_copy)[1:2] <- c("Number of multi-stage forward citations","Number of stem patents")
+max(Citation_nbr_mul_1_sum$Group.1) # The largest number of multi-stage forward citation for stem patents in our data is 1360. 
+# However, because there are very few stem patents having 12 multi-stage forward citations or more, we take all of these stem patents into a group
+Citation_nbr_mul_1_sum[nrow(Citation_nbr_mul_1_sum)+1,] <-NA
+Citation_nbr_mul_1_sum[nrow(Citation_nbr_mul_1_sum),1] <- ">=12"
+Citation_nbr_mul_1_sum[nrow(Citation_nbr_mul_1_sum),2] <- sum(Citation_nbr_mul_1_sum[13:(nrow(Citation_nbr_mul_1_sum)-1),2])
+Citation_nbr_mul_1_sum <- rbind(Citation_nbr_mul_1_sum[1:12,], 
+                                Citation_nbr_mul_1_sum[nrow(Citation_nbr_mul_1_sum),])
+Citation_nbr_mul_1_sum$Group.1 = factor(Citation_nbr_mul_1_sum$Group.1, 
+                                        levels = c("0","1", "2", "3","4", "5", "6", "7", "8", "9", "10", "11", ">=12"))
+# Count the percentage for each type of multi-stage forward citation number
+sum(Citation_nbr_mul_1_sum$x) # which is 103247
+Citation_nbr_mul_1_sum$Percentage = paste(round(Citation_nbr_mul_1_sum$x/103247*100, digits=2),"%")
+```
+
+```{r, echo=FALSE}
+# Bar graph
+plot_1a <- ggplot(data=Citation_nbr_mul_1_sum, 
+                  aes(x=Group.1, y=x)) + 
+  geom_bar(stat="identity") + geom_text(aes(label=Percentage, vjust=-0.25), 
+                                        family="Times New Roman", size=11*5/14) +
+  labs(x="Number of multi-stage forward citations", y="Number of stem patents") +
+  ggtitle("Graph 3. Number of multi-stage forward citations of stem patents") 
+plot_1a + theme_light() + theme(plot.title = element_text(hjust = 0.5, size = 11, face = "bold")) +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) +
+  theme(axis.title = element_text(size = 11))
+# Change the names of columns of the dataframe Citation_nbr_mul_1_sum
+names(Citation_nbr_mul_1_sum)[1:2] <- c("Number of multi-stage forward citations","Number of stem patents")
+```
+
+```{r, include=FALSE}
+### Bar graph of the number of direct forward citations of stem patents
+Citation_nbr_1s_1_sub <- Citation_nbr_1s_1[Citation_nbr_1s_1$App_id %in% Citation_nbr_mul_1$App_id,]
+# Count the number of stem patents for each type of direct forward citation number
+Citation_nbr_1s_1_sum <-aggregate(Citation_nbr_1s_1_sub$App_id, by=list(Citation_nbr_1s_1_sub$Citation_nbr_1s), length)
+
+# Copy for appendix
+Citation_nbr_1s_1_sum_copy <- Citation_nbr_1s_1_sum
+names(Citation_nbr_1s_1_sum_copy)[1:2] <- c("Number of direct forward citations","Number of stem patents")
+
+max(Citation_nbr_1s_1_sum$Group.1) # The largest number of multi-stage forward citation for stem patents in our data is 58. 
+# However, because there are very few stem patents having 6 multi-stage forward citations or more, we take all of these patents into a group
+Citation_nbr_1s_1_sum[nrow(Citation_nbr_1s_1_sum)+1,] <-NA
+Citation_nbr_1s_1_sum[nrow(Citation_nbr_1s_1_sum),1] <- ">=6"
+Citation_nbr_1s_1_sum[nrow(Citation_nbr_1s_1_sum),2] <- sum(Citation_nbr_1s_1_sum[7:(nrow(Citation_nbr_1s_1_sum)-1),2])
+Citation_nbr_1s_1_sum <- rbind(Citation_nbr_1s_1_sum[1:6,], 
+                               Citation_nbr_1s_1_sum[nrow(Citation_nbr_1s_1_sum),])
+Citation_nbr_1s_1_sum$Group.1 = factor(Citation_nbr_1s_1_sum$Group.1, 
+                                       levels = c("0","1", "2", "3","4", "5", ">=6"))
+# Count the percentage for each type of direct forward citation number
+sum(Citation_nbr_1s_1_sum$x) # which is 103247
+Citation_nbr_1s_1_sum$Percentage = paste(round(Citation_nbr_1s_1_sum$x/103247*100, digits=2),"%")
+```
+
+```{r, echo=FALSE}
+# Bar graph
+plot_1b <- ggplot(data=Citation_nbr_1s_1_sum, 
+                  aes(x=Group.1, y=x)) + 
+  geom_bar(stat="identity") + geom_text(aes(label=Percentage, vjust=-0.25), 
+                                        family="Times New Roman", size=11*5/14) +
+  labs(x="Number of direct forward citations", y="Number of stem patents") +
+  ggtitle("Graph 4. Number of direct forward citations of stem patents") 
+plot_1b + theme_light() + theme(plot.title = element_text(hjust = 0.5, size = 11, face = "bold")) +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) +
+  theme(axis.title = element_text(size = 11))
+# Change the names of columns of the table Citation_nbr_1s_1_sum
+names(Citation_nbr_1s_1_sum)[1:2] <- c("Number of direct forward citations","Number of stem patents")
+```
+```{r, include=FALSE}
+save(Citation_nbr_1s_1, file="Citation_nbr_1s_1")
+save(Citation_nbr_mul_1, file="Citation_nbr_mul_1")
+```
+
+```{r, include=FALSE}
+load("Citation_nbr_1s_1")
+load("Citation_nbr_mul_1")
+```
+
+```{r, include=FALSE}
+options("scipen"=10)
+```
+
+To prove using the number of multi-stage forward citations is better to assess the patent's technological value than the number of direct forward citations, we compare the number of forward citations of patents in both cases. The Graph 3 shows the number of stem patents corresponding to their number of multi-stage forward citations (See more in Appendix A)
+
+Our result reports that there are many patents have huge number of multi-stage forward citations in our data. For example, patent with ID `r Citation_nbr_mul_1$App_id[Citation_nbr_mul_1$Nbr==max(Citation_nbr_mul_1$Nbr)]` has the most multi-stage forward citations with `r max(Citation_nbr_mul_1$Nbr)` citations. This number is about `r round((max(Citation_nbr_mul_1$Nbr))/Citation_nbr_1s_1$Citation_nbr_1s[Citation_nbr_1s_1$App_id==Citation_nbr_mul_1$App_id[Citation_nbr_mul_1$Nbr==max(Citation_nbr_mul_1$Nbr)]], digits=0)` times more than its number of direct forward citations (`r Citation_nbr_1s_1$Citation_nbr_1s[Citation_nbr_1s_1$App_id==Citation_nbr_mul_1$App_id[Citation_nbr_mul_1$Nbr==max(Citation_nbr_mul_1$Nbr)]]` citations) (See more in Appendix A and  Appendix B).
+
+As we can see from Graph 3 and Graph 4, the skewness in Graph 3 is much greater than in Graph 4, indicating that the number of multi-stage forward citations can show much more clearly the skewness in the technological value of patents (few patents have huge contribution to the development of the technological knowledge world while most of patents bring benefit for only their applicants) than the number of direct forward citations. In other words, it proves our hypothesis that the number of direct forward citations does not show the true technological value of these stem patents as efficiently as the number of multi-stage forward citations does. This also confirms the finding of Iwan von Wartburg et al. (2005). Therefore, it is rational to use multi-stage forward citations for our work.
+
+```{r, include=FALSE}
+### Statistics for intensive development contribution
+Intensive_1 <- Citation_nbr_mul_1_copy[, 1:10]
+# Count the number of stages of being cited of each stem patent
+library(dplyr)
+Intensive_1<-unique(as.data.frame(Intensive_1 %>% mutate(Stage_nbr = (rowSums(!is.na(select(.,-App_id))))))[c("App_id", "Stage_nbr")])
+# Note: While counting the number of multi-stage forward citations of patents, we find that there are many couple of patents directly or indirectly cites each other. For example, A is cited by B, B is cited by C and C is also cited by A. This becomes a problem for the counting process. Therefore, when we have a new citing patent that is cited by one of its multi-stage cited patents like that, we discard it, and stop the counting. In this sense, A will have only 2 forward citation stages in our analysis, and C is NOT cited by A anymore in the process of counting the number of multi-stage forward citation for A. We should therefore reduce the direct forward citation of C by 1; however, this step is very complicating and causes difficulty for the calculating process due to inconsistency in the number of forward citations of C among rows in the dataframe. Therefore, for simplicity, we would like to keep the true direct forward citation of C. This is the reason why in some cases even if C still has a positive forward citation number in the table Citation_nbr_mul_1_copy, A has only 2 stages instead of 3 stages in the dataframe Intensive_1.
+# Take the maximum number of stages for each patent
+Intensive_1 <- aggregate(Intensive_1$Stage_nbr, by=list(Intensive_1$App_id), FUN= max)
+names(Intensive_1) <- c("App_id", "Stage_nbr")
+# The average number of stages of being cited of all cited patents in the dataset
+Intensive_statistic_1 <- data.frame(Min=min(Intensive_1$Stage_nbr), Mean=mean(Intensive_1$Stage_nbr),
+                                    Median=median(Intensive_1$Stage_nbr), Max=max(Intensive_1$Stage_nbr))
+
+
+### Bar graph for the number of forward citation stages of the stem patents
+# Count the number of stem patents for each type of forward citation stage number
+Intensive_1_sum <- aggregate(Intensive_1$App_id, by=list(Intensive_1$Stage_nbr), length)
+# Copy for Appendix
+Intensive_1_sum_copy <- Intensive_1_sum
+names(Intensive_1_sum_copy)[1:2] <- c("Number of forward citation stages","Number of patents")
+```
+
+```{r, include=FALSE}
+save(Intensive_1, file="Intensive_1")
+save(Intensive_1_sum, file="Intensive_1_sum")
+```
+
+```{r, include=FALSE}
+load("Intensive_1")
+load("Intensive_1_sum")
+```
+
+Besides calculating the number of multi-stage forward citations, we also count the number of forward citation stages. Graph 5 shows the number of patents corresponding to the number of forward citation stages (See more in Appendix C). As shown in Graph 5, most of patents are not cited, which mean that they do not play the role of knowledge background for and have no technological value to other patents during their first 12 years. However, there are few patents put the foundation for the intensive development of technological knowledge such as such as the patent with ID `r Intensive_1$App_id[Intensive_1$Stage_nbr==max(Intensive_1_sum$Group.1)]` with `r max(Intensive_1_sum$Group.1)` forward citation stages.
+
+```{r, include=FALSE}
+max(Intensive_1_sum$Group.1) # The largest stage number for the stem patents in our data is 9. 
+# However, because there are very few stem patents having 4 forward citation stages or more, we take all of these stem patents into a group
+Intensive_1_sum[nrow(Intensive_1_sum)+1,] <-NA
+Intensive_1_sum[nrow(Intensive_1_sum),1] <- ">=4"
+Intensive_1_sum[nrow(Intensive_1_sum),2] <- sum(Intensive_1_sum[5:(nrow(Intensive_1_sum)-1),2])
+Intensive_1_sum <- rbind(Intensive_1_sum[1:4,], Intensive_1_sum[nrow(Intensive_1_sum),])
+Intensive_1_sum$Group.1 = factor(Intensive_1_sum$Group.1, levels = c("0","1", "2", "3",">=4"))
+# Count the percentage for each type of forward citation stage number
+sum(Intensive_1_sum$x) # which is 103247
+Intensive_1_sum$Percentage = paste(round(Intensive_1_sum$x/103247*100, digits=2),"%")
+```
+
+```{r, echo=FALSE}
+# Bar graph
+plot_1c <- ggplot(data=Intensive_1_sum, 
+                  aes(x=Group.1, y=x)) + 
+  geom_bar(stat="identity") + geom_text(aes(label=Percentage, vjust=-0.25), 
+                                        family="Times New Roman", size=11*5/14) +
+  labs(x="Number of forward citation stages", y="Number of patents") +
+  ggtitle("Graph 5. Number of forward citation stages of patents")
+plot_1c + theme_light() + theme(plot.title = element_text(hjust = 0.5, size = 11, face = "bold")) + 
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) +
+  theme(axis.title = element_text(size = 11))
+```
+
+```{r, include=FALSE}
+# Change the names of columns of the dataframe Intensive_2_sum
+names(Intensive_1_sum)[1:2] <- c("Number of forward citation stages","Number of patents")
+```
+
+##&nbsp;&nbsp;&nbsp; 4.2. Correlations 
+
+In this part, we can calculate the correlations among 4 indicators of the patents including the number of multi-stage forward citations, of direct forward citations, of forward citation stages and of renewals. We use data of only stem patents with full information of the number of multi-stage forward citations, the number of direct forward citations, the number of forward citation stages and the number of renewals instead of all stem patents.
+
+Because of the skewness in the distribution of the numbers of multi-stage forward citations, of direct forward citations and of forward citation stages, we would like to use Spearman method, which is used when 2 variables do not have bivariable normal distribution. Another reason of using Spearman's rank correlation coefficient is that the patent renewal fee increases over time, which results in that the relationship between patent renewals and another variable should be monotonic instead of linear.
+
+```{r, include=FALSE}
+# Patent renewal information for all patents in the dataframe Citation_nbr_mul_1
+Patent_renewals_1 <- Renewal_DE[Renewal_DE$appln_id %in% Citation_nbr_mul_1$App_id, c("appln_id", "renewal")]
+# Correlation between the number of multi-stage forward citations and the number of renewals 
+Citation_nbr_mul_1_cor_re <- merge(x=Citation_nbr_mul_1, y= Patent_renewals_1, by.x="App_id", by.y="appln_id", all.x=TRUE)
+Citation_nbr_mul_1_cor_re <- merge(x=Citation_nbr_mul_1_cor_re, y= Intensive_1, by="App_id", all.x=TRUE)
+Citation_nbr_mul_1_cor_re <- merge(x=Citation_nbr_mul_1_cor_re, y= Citation_nbr_1s_1, by="App_id", all.x=TRUE)
+Citation_nbr_mul_1_cor_re <- Citation_nbr_mul_1_cor_re[complete.cases(Citation_nbr_mul_1_cor_re),] 
+Citation_nbr_mul_1_cor_re$App_id <- NULL
+names(Citation_nbr_mul_1_cor_re) <- c("Number of multi-stage forward citations", "Number of renewals", "Number of forward citation stages", "Number of direct forward citations") 
+Correlation_1 <- cor(Citation_nbr_mul_1_cor_re, method="spearman")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+kable(Correlation_1, booktabs=TRUE, caption = "Table 1. Correlations between indicators", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+```{r, include=FALSE}
+save(Citation_nbr_mul_1_cor_re, file="Citation_nbr_mul_1_cor_re")
+```
+
+```{r, include=FALSE}
+load("Citation_nbr_mul_1_cor_re")
+```
+The correlation between the number of direct forward citations and the number of multi-stage forward citations and the correlation between the number of direct forward citations and the number of forward citation stages are nearly 1 which is very high. This is because Spearman method uses ranks instead of values of the variables. This means that although the number of direct forward citations of a patent does not show its true technological value (part 4.1), a patent having more direct forward citations tends to have more multi-stage forward citations and more forward citation stages. In other words, a patent whose technological value more other patents directly benefit from tends to contribute more into the intensive development of the technological knowledge world.
+
+The correlation between the number of direct forward citations and the number of renewals is `r cor(Citation_nbr_mul_1_cor_re[,2], Citation_nbr_mul_1_cor_re[,4], method="spearman")` which is very low. This means that the number of renewals depends on the other profit sources of the patents, such as economic value (the firm owning the patents earns profit from selling their product applied the patent), and the technological values of the patents do not bring as much financial benefit for their applicants as those profit sources. 
+
+The correlation between the number of multi-stage forward citations and the number of renewals is low 
+(`r cor(Citation_nbr_mul_1_cor_re[,1], Citation_nbr_mul_1_cor_re[,2], method="spearman")`), which shows that there is no (significant) support for our hypothesis 2: the patents with more multi-stage forward citations have more patent renewals. The correlation between the number of forward citation stages and the number of renewals is `r cor(Citation_nbr_mul_1_cor_re[,3], Citation_nbr_mul_1_cor_re[,2])`. They both are even lower than the correlation between the number of direct forward citations and the number of renewals of patents. This means that not only the technological value of a patent does not bring much benefit for its applicant but also that benefit is even smaller than it should be. 
+
+# __5. Correlation between the number of within-IPC3-class multi-stage forward citations and the number of patent renewals__
+
+##&nbsp;&nbsp;&nbsp; 5.1. Within-IPC3-class multi-stage forward citations
+
+In this part, we calculate the number of within-IPC3-class multi-stage forward citations of stem patents. This means that only citing patents which have the same 3-digit-IPC class with the cited patent are considered as citing patents. While counting the number of within-IPC3-class multi-stage forward citations of patents, we also discard the citing patents that are cited by it's multi-stage cited patents (overlapping cases) as explained in part 4.1.
+
+```{r, include=FALSE}
+### Create data for part 5.1
+# Because in part 5.1 we want to count the number of within-IPC3-class multi-stage forward citation of patents, we would like to remove all couples of cited and citing patents which are in different IPC3 classes
+# Data_p5.1 <- unique(rbind(Data[Data$Cited_IPC3==Data$Citing_IPC3,],Data[is.na(Data$Citing_IPC3),]))
+# Running this query will have an error in Ops.factor(Data$Cited_IPC3, Data$Citing_IPC3) : level sets of factors are different
+# Let's check it
+length(levels(Data$Cited_IPC3)) # which has 121 factor levels
+length(levels(Data$Citing_IPC3)) # which has 122 factor levels (1 more factor level than levels(Data_nfc$Cited_IPC3))
+# Fix that error
+Data$Cited_IPC3 <- factor(Data$Cited_IPC3, levels= levels(Data$Citing_IPC3))
+Data_p5.1 <- unique(rbind(Data[Data$Cited_IPC3==Data$Citing_IPC3,],Data[is.na(Data$Citing_IPC3),]))
+# Remove a row of NA created by using  the function is.na() and unnecessary columns of priority year information
+Data_p5.1 <- Data_p5.1[!is.na(Data_p5.1$Cited_app_id), c('Cited_app_id', 'Cited_IPC3', 'Citing_app_id', 'Citing_IPC3')] 
+
+
+### Calculate the number of within-IPC3-class direct forward citations for each patent
+Data_p5.1$Citation_nbr[is.na(Data_p5.1$Citing_app_id)] <- 0
+Data_p5.1$Citation_nbr[!is.na(Data_p5.1$Citing_app_id)] <- 1
+Citation_nbr_1s_2 <- aggregate(Data_p5.1$Citation_nbr, 
+                             by= list(Data_p5.1$Cited_IPC3, Data_p5.1$Cited_app_id), FUN=sum)
+names(Citation_nbr_1s_2) <- c("IPC3", "App_id", "Citation_nbr_1s")
+
+
+### Calculate the number of within-IPC3-class multi-stage forward citations for each stem patent
+# Find all patents which do not cite any other patent in our data (For simplicity, we call them stem patent)
+# And create a dataframe of these stem patents along with their IPC3 classes, forward citation patents and forward citation patents' IPC3
+Citation_nbr_mul_2 <- Data_p5.1[,c(1,2,3,4)] 
+names(Citation_nbr_mul_2) <- c("App_id","IPC3","App_id_1","IPC3_1")
+# Add the number of within-IPC3-class direct forward citations for stem patents
+Citation_nbr_mul_2 <- merge(x=Citation_nbr_mul_2, y= Citation_nbr_1s_2, by=c('App_id','IPC3'), all.x=TRUE)
+names(Citation_nbr_mul_2)[5] <- "Nbr"
+# Add the number of within-IPC3-class direct forward citations for citing patents
+Citation_nbr_mul_2 <- merge(x=Citation_nbr_mul_2, y=Citation_nbr_1s_2, by.x=c('App_id_1','IPC3_1'), 
+                          by.y = c('App_id', 'IPC3'), all.x=T)
+names(Citation_nbr_mul_2)[6] <- "Nbr_1"
+# Fix the mistake of space in data values in the column Nbr_1
+str_replace_all(string=Citation_nbr_mul_2$Nbr_1, pattern=" ", repl="")
+
+
+### Now we add the citing patents for the lasted citing patents in the dataframe Citation_nbr_mul_2 in a more general way
+# Add the citing patents and their IPC3 classes of the lasted citing patents into the datdframe Citation_nbr_mul_2
+Citation_nbr_mul_2 <- merge(x=Citation_nbr_mul_2, y=Data_p5.1[,c(1,2,3,4)], 
+                          by.x=c(names(Citation_nbr_mul_2)[1],names(Citation_nbr_mul_2)[2]), 
+                          by.y = c('Cited_app_id', 'Cited_IPC3'), all.x=T)
+names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)-1] <- paste("App_id_", ncol(Citation_nbr_mul_2)%/%3)
+names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)] <- paste("IPC3_", ncol(Citation_nbr_mul_2)%/%3)
+# Add the number of within-IPC3-class direct forward citations for the new citing patents that we have just added
+Citation_nbr_mul_2 <- merge(x=Citation_nbr_mul_2, y=Citation_nbr_1s_2, 
+                          by.x= c(names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)-1],
+                                  names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)]), 
+                          by.y = c('App_id','IPC3'), all.x=T)
+names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)] <- paste("Nbr_", ncol(Citation_nbr_mul_2)/3-1)
+# Fix the mistake of space in column names and data in the new column of citation numbers
+str_replace_all(string=Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)], pattern=" ", repl="")
+names(Citation_nbr_mul_2)<-str_replace_all(string=names(Citation_nbr_mul_2), pattern=" ", repl="")
+# Remove all new citing patents that are their cited patents' within-IPC3-class multi-stage cited patents
+Citation_nbr_mul_2[] <- t(apply(Citation_nbr_mul_2, 1, function(x) replace(x, duplicated(x, fromLast = TRUE) & 
+                                                                         seq_along(x) == 1, NA)))
+# Change the values of IPC3 classes and within-IPC3-class multi-stage citation numbers of these patents into NA
+Citation_nbr_mul_2[is.na(Citation_nbr_mul_2[,1]),c(2,ncol(Citation_nbr_mul_2))] <- NA
+# Calculate the sum of the newest column of within-IPC3-class direct forward citation numbers
+sum(as.numeric(Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)]), na.rm=T)
+
+
+### Repeat running the above code paragraph until we get the result of 0 for the last query of the code paragraph 'sum(as.numeric(Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)]), na.rm=T)', which means that all elements in the final column of the dataframe Citation_nbr_mul_2 have NA values. In other words, none of the last citing patents are cited.
+while (sum(as.numeric(Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)]), na.rm=T)!=0) {
+  Citation_nbr_mul_2 <- merge(x=Citation_nbr_mul_2, y=Data_p5.1[,c(1,2,3,4)], 
+                              by.x=c(names(Citation_nbr_mul_2)[1],names(Citation_nbr_mul_2)[2]), 
+                              by.y = c('Cited_app_id', 'Cited_IPC3'), all.x=T)
+  names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)-1] <- paste("App_id_", ncol(Citation_nbr_mul_2)%/%3)
+  names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)] <- paste("IPC3_", ncol(Citation_nbr_mul_2)%/%3)
+  Citation_nbr_mul_2 <- merge(x=Citation_nbr_mul_2, y=Citation_nbr_1s_2, 
+                              by.x= c(names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)-1],
+                                      names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)]), 
+                              by.y = c('App_id','IPC3'), all.x=T)
+  names(Citation_nbr_mul_2)[ncol(Citation_nbr_mul_2)] <- paste("Nbr_", ncol(Citation_nbr_mul_2)/3-1)
+  str_replace_all(string=Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)], pattern=" ", repl="")
+  names(Citation_nbr_mul_2)<-str_replace_all(string=names(Citation_nbr_mul_2), pattern=" ", repl="")
+  Citation_nbr_mul_2[] <- t(apply(Citation_nbr_mul_2, 1, function(x) replace(x, duplicated(x, fromLast = TRUE) & 
+                                                                               seq_along(x) == 1, NA)))
+  Citation_nbr_mul_2[is.na(Citation_nbr_mul_2[,1]),c(2,ncol(Citation_nbr_mul_2))] <- NA
+}
+
+
+### Copy the result for later using
+Citation_nbr_mul_2_copy <- Citation_nbr_mul_2
+
+
+### Calculate the within-IPC3-class multi-stage forward citation numbers for the stem patents
+# Remove the unnecessary columns for counting (The last citing patents and their IPC3 classes as well as their within-IPC3-class direct forward citation numbers are not neccessary anymore because they are counted in the within-IPC3-class direct forward citation numbers of their direct cited patents. Since now, their direct cited patents become the last citing patents in the dataframe until these direct cited patents are removed in the next time repeating the code, and so on)
+Citation_nbr_mul_2[,c(1,2,ncol(Citation_nbr_mul_2))] <- NULL
+# Change NA values into 0
+Citation_nbr_mul_2[is.na(Citation_nbr_mul_2)] <- 0
+
+
+# Accumulate the number of within-IPC3-class forward citations starting from the last citing patents
+# First, we create an additional dataframe Plus_2 to contain the number of within-IPC3-class multi-stage forward citations of the last citing patents in the dataframe Citation_nbr_mul_2
+Plus_2 <- unique(data.frame(Citation_nbr_mul_2[,c(3,4,1,2,ncol(Citation_nbr_mul_2))]))
+Plus_2<-aggregate(as.numeric(Plus_2[,5]), by=list(Plus_2[,2], Plus_2[,1]), FUN=sum)
+# After that, we don't need the ID as well as IPC3 and the number of within-IPC3-class forward citations of the last citing patents anymore. So we remove the unnecessary columns for counting
+Citation_nbr_mul_2[,c(1,2,ncol(Citation_nbr_mul_2))] <- NULL
+Citation_nbr_mul_2 <- unique(Citation_nbr_mul_2)
+# Name the columns of the dataframe Plus_2 the same as the 2 first columns of the dataframe Citation_nbr_mul_2 to prepare for merging
+names(Plus_2) <- c(names(Citation_nbr_mul_2)[2],names(Citation_nbr_mul_2)[1],'Nbr_plus')
+# Merge
+Citation_nbr_mul_2<-merge(x=Citation_nbr_mul_2, y=Plus_2, 
+                        by=c(names(Citation_nbr_mul_2)[2],names(Citation_nbr_mul_2)[1]), all.x=T)
+# Calculate the within-IPC3-class multi-stage citation number of the last citing patents in the dataframe Citation_nbr_mul_2
+Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)-1] <- as.numeric(Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)-1]) + 
+  as.numeric(Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)])
+# Delete the column added from dataframe Plus_2
+Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)] <- NULL
+
+
+### Repeat running the above code paragraph until Nbr is the final column for the number of within-IPC3-class multi-stage forward citations, which means that the dataframe Citation_nbr_mul_2 has 3 columns.
+while (ncol(Citation_nbr_mul_2)>3) {
+  Plus_2 <- unique(data.frame(Citation_nbr_mul_2[,c(3,4,1,2,ncol(Citation_nbr_mul_2))]))
+  Plus_2<-aggregate(as.numeric(Plus_2[,5]), by=list(Plus_2[,2], Plus_2[,1]), FUN=sum)
+  Citation_nbr_mul_2[,c(1,2,ncol(Citation_nbr_mul_2))] <- NULL
+  Citation_nbr_mul_2 <- unique(Citation_nbr_mul_2)
+  names(Plus_2) <- c(names(Citation_nbr_mul_2)[2],names(Citation_nbr_mul_2)[1],'Nbr_plus')
+  Citation_nbr_mul_2<-merge(x=Citation_nbr_mul_2, y=Plus_2, 
+                            by=c(names(Citation_nbr_mul_2)[2],names(Citation_nbr_mul_2)[1]), all.x=T)
+  Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)-1] <- as.numeric(Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)-1]) + 
+    as.numeric(Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)])
+  Citation_nbr_mul_2[,ncol(Citation_nbr_mul_2)] <- NULL
+}
+
+
+### Find min, max, median and mean of the within-IPC3-class multi-stage forward citation number for each IPC3 class
+# Min
+IPC3_Nbr_statistic <- aggregate(Citation_nbr_mul_2$Nbr, by=list(Citation_nbr_mul_2$IPC3), FUN=min)
+names(IPC3_Nbr_statistic) <- c('IPC3', 'Min')
+# Median
+IPC3_Nbr_median <- aggregate(Citation_nbr_mul_2$Nbr, by=list(Citation_nbr_mul_2$IPC3), FUN=median)
+names(IPC3_Nbr_median) <- c('IPC3', 'Median')
+IPC3_Nbr_statistic <- merge(x=IPC3_Nbr_statistic, y=IPC3_Nbr_median, by='IPC3', all=TRUE)
+# Mean
+IPC3_Nbr_mean <- aggregate(Citation_nbr_mul_2$Nbr, by=list(Citation_nbr_mul_2$IPC3), FUN=mean)
+names(IPC3_Nbr_mean) <- c('IPC3', 'Mean')
+IPC3_Nbr_statistic <- merge(x=IPC3_Nbr_statistic, y=IPC3_Nbr_mean, by='IPC3', all=TRUE)
+# Max
+IPC3_Nbr_max <- aggregate(Citation_nbr_mul_2$Nbr, by=list(Citation_nbr_mul_2$IPC3), FUN=max)
+names(IPC3_Nbr_max) <- c('IPC3', 'Max')
+IPC3_Nbr_statistic <- merge(x=IPC3_Nbr_statistic, y=IPC3_Nbr_max, by='IPC3', all=TRUE)
+```
+
+```{r, include=FALSE}
+### Bar graph for the number of within-IPC3-class multi-stage forward citations of stem patents
+# Count the number of stem patents for each type of within_IPC3_class multi-stage forward citation number
+Citation_nbr_mul_2_sum <-aggregate(Citation_nbr_mul_2$App_id, by=list(Citation_nbr_mul_2$Nbr), length)
+# Copy for appendix
+Citation_nbr_mul_2_sum_copy <- Citation_nbr_mul_2_sum
+# Change the names of columns of the dataframe Citation_nbr_mul_2_sum_copy
+names(Citation_nbr_mul_2_sum_copy)[1:2] <- c("Number of within-IPC3-class multi-stage forward citations","Number of stem patents")
+max(Citation_nbr_mul_2_sum$Group.1) # The largest number of within-IPC3-class multi-stage forward citation for stem patents in our data is 347. 
+# However, because there are very few stem patents having 12 within-IPC3-class multi-stage forward citations or more, we take all of these stem patents into a group
+Citation_nbr_mul_2_sum[nrow(Citation_nbr_mul_2_sum)+1,] <-NA
+Citation_nbr_mul_2_sum[nrow(Citation_nbr_mul_2_sum),1] <- ">=12"
+Citation_nbr_mul_2_sum[nrow(Citation_nbr_mul_2_sum),2] <- sum(Citation_nbr_mul_2_sum[13:(nrow(Citation_nbr_mul_2_sum)-1),2])
+Citation_nbr_mul_2_sum <- rbind(Citation_nbr_mul_2_sum[1:12,], 
+                                Citation_nbr_mul_2_sum[nrow(Citation_nbr_mul_2_sum),])
+Citation_nbr_mul_2_sum$Group.1 = factor(Citation_nbr_mul_2_sum$Group.1, 
+                                        levels = c("0","1", "2", "3","4", "5", "6", "7", "8","9", "10", "11", ">=12"))
+# Count the percentage for each type of within-IPC3-class multi-stage forward citation number
+sum(Citation_nbr_mul_2_sum$x) # which is 155389
+Citation_nbr_mul_2_sum$Percentage = paste(round(Citation_nbr_mul_2_sum$x/155389*100, digits=2),"%")
+```
+
+```{r, echo=FALSE}
+# Bar graph
+plot_2a <- ggplot(data=Citation_nbr_mul_2_sum, 
+                  aes(x=Group.1, y=x)) + 
+  geom_bar(stat="identity") + geom_text(aes(label=Percentage, vjust=-0.25), 
+                                        family="Times New Roman", size=11*5/14) +
+  labs(x="Number of within-IPC3-class multi-stage forward citations", y="Number of stem patents") +
+  ggtitle("Graph 6. Number of within-IPC3-class multi-stage forward citations of stem patents") 
+plot_2a + theme_light() + theme(plot.title = element_text(hjust = 0.5, size = 11, face = "bold")) +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) +
+  theme(axis.title = element_text(size = 11))
+# Change the names of columns of the dataframe Citation_nbr_mul_2_sum
+names(Citation_nbr_mul_2_sum)[1:2] <- c("Number of within-IPC3-class multi-stage forward citations","Number of stem patents")
+```
+
+```{r, include=FALSE}
+### Bar graph of the number of within-IPC3-class direct forward citations of stem patents
+# Fix the problem of space in the values in the column App_id of Citation_nbr_mul_2
+Citation_nbr_mul_2$App_id <- str_replace_all(Citation_nbr_mul_2$App_id, fixed(" "), "")
+# Merge he dataframe Citation_nbr_1s_2 and Citation_nbr_mul_2 to get the number of within-IPC3-class direct forward citations for the stem patents
+Citation_nbr_1s_2_sub_1 <- merge(x=Citation_nbr_mul_2, y=Citation_nbr_1s_2, by=c("App_id", "IPC3"), all.x = T)
+Citation_nbr_1s_2_sub <- Citation_nbr_1s_2_sub_1[,c('IPC3', 'App_id', 'Citation_nbr_1s')]
+# Count the number of stem patents for each type of within_IPC3_class direct forward citation number
+Citation_nbr_1s_2_sum <-aggregate(Citation_nbr_1s_2_sub$App_id, by=list(Citation_nbr_1s_2_sub$Citation_nbr_1s), length)
+# Copy for appendix
+Citation_nbr_1s_2_sum_copy <- Citation_nbr_1s_2_sum
+names(Citation_nbr_1s_2_sum_copy)[1:2] <- c("Number of within-IPC3-class direct forward citations","Number of stem patents")
+max(Citation_nbr_1s_2_sum$Group.1) # The largest number of within-IPC3-class multi-stage forward citation for stem patents in our data is 47. 
+# However, because there are very few stem patents having 6 within-IPC3-class multi-stage forward citations or more, we take all of these stem patents into a group
+Citation_nbr_1s_2_sum[nrow(Citation_nbr_1s_2_sum)+1,] <-NA
+Citation_nbr_1s_2_sum[nrow(Citation_nbr_1s_2_sum),1] <- ">=6"
+Citation_nbr_1s_2_sum[nrow(Citation_nbr_1s_2_sum),2] <- sum(Citation_nbr_1s_2_sum[7:(nrow(Citation_nbr_1s_2_sum)-1),2])
+Citation_nbr_1s_2_sum <- rbind(Citation_nbr_1s_2_sum[1:6,], 
+                               Citation_nbr_1s_2_sum[nrow(Citation_nbr_1s_2_sum),])
+Citation_nbr_1s_2_sum$Group.1 = factor(Citation_nbr_1s_2_sum$Group.1, 
+                                       levels = c("0","1", "2", "3","4", "5", ">=6"))
+# Count the percentage for each type of within-IPC3-class direct forward citation number
+sum(Citation_nbr_1s_2_sum$x) # which is 155389
+Citation_nbr_1s_2_sum$Percentage = paste(round(Citation_nbr_1s_2_sum$x/155389*100, digits=2),"%")
+```
+
+```{r, echo=FALSE}
+# Bar graph
+plot_2b <- ggplot(data=Citation_nbr_1s_2_sum, 
+                  aes(x=Group.1, y=x)) + 
+  geom_bar(stat="identity") + geom_text(aes(label=Percentage, vjust=-0.25), 
+                                        family="Times New Roman", size=11*5/14) +
+  labs(x="Number of within-IPC3-class direct forward citations", y="Number of stem patents") +
+  ggtitle("Graph 7. Number of within-IPC3-class direct forward citations of stem patents") 
+plot_2b + theme_light() + theme(plot.title = element_text(hjust = 0.5, size = 11, face = "bold")) +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) +
+  theme(axis.title = element_text(size = 11))
+# Change the names of columns of the dataframe Citation_nbr_1s_2_sum
+names(Citation_nbr_1s_2_sum)[1:2] <- c("Number of within-IPC3-class direct forward citations","Number of stem patents")
+```
+
+The Graph 6 shows the number of stem patents corresponding to their number of multi-stage forward citations within-IPC3-class (See more in Appendix D) and Graph 7 shows the number of stem patents for the corresponding number of direct forward citations within-IPC3-class (See more in Appendix E). The skewness in Graph 6 is greater than in Graph 7, which, just like in Graph 3 and Graph 4, indicates that the number of multi-stage forward citations can show the technological value of the patents more precisely than the number of direct forward citations. 
+
+```{r, include=FALSE}
+### Statistics for within-IPC3-class intensive development contribution
+Intensive_2 <- Citation_nbr_mul_2_copy[, c(1,3,5,7,8)]
+library(dplyr)
+# Count the number of stages of being cited within its IPC3 class of each stem patent
+Intensive_2 <-unique(as.data.frame(Intensive_2 %>% mutate(Stage_nbr = (rowSums(!is.na(select(.,c(-App_id,-IPC3)))))))[c("App_id", "IPC3", "Stage_nbr")])
+# Note: While counting the number of multi-stage forward citations of patents, we find that there are many couple of patents directly or indirectly cites each other. For example, A is cited by B, B is cited by C and C is also cited by A. This becomes a problem for the counting process. Therefore, when we have a new citing patent that is cited by one of its multi-stage cited patents like that, we discard it, and stop the counting. In this sense, A will have only 2 forward citation stages in our analysis, and C is NOT cited by A anymore in the process of counting the number of multi-stage forward citation for A. We should therefore reduce the direct forward citation of C by 1; however, this step is very complicating and causes difficulty for the calculating process due to inconsistency in the number of forward citations of C among rows in the dataframe. Therefore, for simplicity, we would like to keep the true direct forward citation of C. This is the reason why in some cases even if C still has a positive forward citation number in the table Citation_nbr_mul_1_copy, A has only 2 stages instead of 3 stages in the dataframe Intensive_2.
+# Take the maximum number of within-IPC3-class forward citation stages for each stem patent (along with their IPC3 classes)
+Intensive_2 <- aggregate(Intensive_2$Stage_nbr, by=list(Intensive_2$IPC3, Intensive_2$App_id), FUN= max)
+names(Intensive_2) <- c("IPC3", "App_id", "Stage_nbr")
+# Calculate min, max, mean, median of the number of within-IPC3-class forward citation stages of the stem patents for each IPC3 class
+# Min
+Intensive_statistic_2 <- aggregate(Intensive_2$Stage_nbr, by=list(Intensive_2$IPC3), FUN=min)
+names(Intensive_statistic_2) <- c("IPC3", "Min")
+# Median
+Intensive_statistic_2_median <- aggregate(Intensive_2$Stage_nbr, by=list(Intensive_2$IPC3), FUN=median)
+names(Intensive_statistic_2_median) <- c("IPC3", "Median")
+Intensive_statistic_2 <- merge(x=Intensive_statistic_2, y=Intensive_statistic_2_median, by="IPC3", all=TRUE)
+# Mean
+Intensive_statistic_2_mean <- aggregate(Intensive_2$Stage_nbr, by=list(Intensive_2$IPC3), FUN=mean)
+names(Intensive_statistic_2_mean) <- c("IPC3", "Mean")
+Intensive_statistic_2 <- merge(x=Intensive_statistic_2, y=Intensive_statistic_2_mean, by="IPC3", all=TRUE)
+# Max
+Intensive_statistic_2_max <- aggregate(Intensive_2$Stage_nbr, by=list(Intensive_2$IPC3), FUN=max)
+names(Intensive_statistic_2_max) <- c("IPC3", "Max")
+Intensive_statistic_2 <- merge(x=Intensive_statistic_2, y=Intensive_statistic_2_max, by="IPC3", all=TRUE)
+```
+
+```{r, include=FALSE}
+### Graph for the number of within-IPC3-class forward citation stages for IPC3 classes
+# Check how many IPC3 classes we have in dataframe Intensive_2 
+nrow(Intensive_statistic_2) # which is 121
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Due to the large number of IPC3 classes, we devide the table Intensive into small tables to make graphs
+split_list <- split(Intensive_2,Intensive_2$IPC3)
+Intensive_2a <- rbind(split_list[[1]],split_list[[2]],split_list[[3]], split_list[[4]], split_list[[5]],
+                      split_list[[6]], split_list[[7]], split_list[[8]], split_list[[9]], split_list[[10]],
+                      split_list[[11]], split_list[[12]], split_list[[13]], split_list[[14]], split_list[[15]],
+                      split_list[[16]], split_list[[17]], split_list[[18]], split_list[[19]], split_list[[20]])
+Intensive_2b <- rbind(split_list[[21]], split_list[[22]], split_list[[23]], split_list[[24]], split_list[[25]],
+                      split_list[[26]], split_list[[27]], split_list[[28]], split_list[[29]], split_list[[30]],
+                      split_list[[31]], split_list[[32]], split_list[[33]], split_list[[34]], split_list[[35]],
+                      split_list[[36]], split_list[[37]], split_list[[38]], split_list[[39]], split_list[[40]])
+Intensive_2c <- rbind(split_list[[41]], split_list[[42]], split_list[[43]], split_list[[44]], split_list[[45]],
+                      split_list[[46]], split_list[[47]], split_list[[48]], split_list[[49]], split_list[[50]],
+                      split_list[[51]], split_list[[52]], split_list[[53]], split_list[[54]], split_list[[55]],
+                      split_list[[56]], split_list[[57]], split_list[[58]], split_list[[59]], split_list[[60]])
+Intensive_2d <- rbind(split_list[[61]], split_list[[62]], split_list[[63]], split_list[[64]], split_list[[65]],
+                      split_list[[66]], split_list[[67]], split_list[[68]], split_list[[69]], split_list[[70]],
+                      split_list[[71]], split_list[[72]], split_list[[73]], split_list[[74]], split_list[[75]],
+                      split_list[[76]], split_list[[77]], split_list[[78]], split_list[[79]], split_list[[80]])
+Intensive_2e <- rbind(split_list[[81]], split_list[[82]], split_list[[83]], split_list[[84]], split_list[[85]],
+                      split_list[[86]], split_list[[87]], split_list[[88]], split_list[[89]], split_list[[90]],
+                      split_list[[91]], split_list[[92]], split_list[[93]], split_list[[94]], split_list[[95]],
+                      split_list[[96]], split_list[[97]], split_list[[98]], split_list[[99]], split_list[[100]])
+Intensive_2f <- rbind(split_list[[101]], split_list[[102]], split_list[[103]], split_list[[104]], split_list[[105]],
+                      split_list[[106]], split_list[[107]], split_list[[108]], split_list[[109]], split_list[[100]],
+                      split_list[[111]], split_list[[112]], split_list[[113]], split_list[[114]], split_list[[115]],
+                      split_list[[116]], split_list[[117]], split_list[[118]], split_list[[119]], split_list[[120]],
+                      split_list[[121]])
+plot_a <- ggplot(data=Intensive_2a, aes(x=IPC3, y=Stage_nbr)) + 
+  labs(x="IPC3") + labs(y="Number of stages") +
+  geom_crossbar(stat="summary", fun.y=mean, fun.ymax=max, fun.ymin=min) + coord_flip() +
+  theme(text=element_text(family="Times New Roman", size=11)) + 
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+plot_b <-ggplot(data=Intensive_2b, aes(x=IPC3, y=Stage_nbr)) + 
+  labs(x="IPC3") + labs(y="Number of stages") +
+  geom_crossbar(stat="summary", fun.y=mean, fun.ymax=max, fun.ymin=min) + coord_flip() +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+plot_c <- ggplot(data=Intensive_2c, aes(x=IPC3, y=Stage_nbr)) + 
+  labs(x="IPC3") + labs(y="Number of stages") +
+  geom_crossbar(stat="summary", fun.y=mean, fun.ymax=max, fun.ymin=min) + coord_flip() +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+plot_d <- ggplot(data=Intensive_2d, aes(x=IPC3, y=Stage_nbr)) + 
+  labs(x="IPC3") + labs(y="Number of stages") +
+  geom_crossbar(stat="summary", fun.y=mean, fun.ymax=max, fun.ymin=min) + coord_flip() +
+  theme(text=element_text(family="Times New Roman", size=11)) + 
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+plot_e <- ggplot(data=Intensive_2e, aes(x=IPC3, y=Stage_nbr)) + 
+  labs(x="IPC3") + labs(y="Number of stages") +
+  geom_crossbar(stat="summary", fun.y=mean, fun.ymax=max, fun.ymin=min) + coord_flip() +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+plot_f <- ggplot(data=Intensive_2f, aes(x=IPC3, y=Stage_nbr)) + 
+  labs(x="IPC3") + labs(y="Number of stages") +
+  geom_crossbar(stat="summary", fun.y=mean, fun.ymax=max, fun.ymin=min) + coord_flip() +
+  theme(text=element_text(family="Times New Roman", size=11)) +
+  theme(axis.text = element_text(size = 11)) + theme(axis.title = element_text(size = 11))
+library(grid)
+library(gridExtra)
+grid.arrange(plot_a, plot_b, plot_c, nrow = 1, top = 
+               textGrob("Graph 8. Number of citation stages for IPC3 classes", hjust = 0.5, 
+                        gp = gpar(fontfamily = "Times New Roman", size = 11, fontface="bold")))
+grid.arrange(plot_d, plot_e, plot_f, nrow =1, top = 
+               textGrob("Graph 9. Number of citation stages for IPC3 classes", hjust = 0.5, 
+                        gp = gpar(fontfamily = "Times New Roman", size = 11, fontface="bold")))
+# The box of each IPC3 class shows the min, max and mean of the number of its within-IPC3-class forward citation stages:
+# The left edge is min
+# The right edge is max
+# The bold bar in the middle is mean
+```
+
+Graph 8 and Graph 9 are the plots for the minimum, maximum, and average number of forward citation stages for each IPC3 class (See more in Appendix F). Most of the IPC3 have maximum 2 stages, minimum 0 stage and an average quite close to 0. Compared to part 4.1, the number of stages reduces sharply when IPC3 class is taken into account. It implies that , in general, within the their technological fields, patents which are cited directly support their citing patents rather than have contribution to intensive development of the social technological knowlegde like in part 4.1. We therefore can conclude that that the technological content of patents tends to be more temporarily valuable in their technological fields than out of of their technological fields, and technological fields tends to develop "extensively". However, despite these new findings, similar to part 4.1, these findings does not change the fact that the majority of the applications do not have citations or impact on the subsequent inventions.
+
+##&nbsp;&nbsp;&nbsp; 5.2. Correlations
+
+In this part, we again calculate the correlations among 4 indicators of the patents with IPC3 class restricted, just like in part 4.2. We use data of only stem patents with full information of the number of multi-stage forward citations, the number of direct forward citations, the number of forward citation stages and the number of renewals instead of all stem patents. And for the same reason mentioned in part 4.2, we would like to use Spearman method when assessing the correlation. We would like to compare what we get with the correlations we got from part 4.2.
+
+```{r, include=FALSE}
+# Patent renewal information for all patents in the dataframe Citation_nbr_mul_2
+Patent_renewals_2 <- Renewal_DE[Renewal_DE$appln_id %in% Citation_nbr_mul_2$App_id, c("appln_id", "renewal")]
+# Correlation between the number of within-IPC3-class multi-stage forward citations and the number of renewals (we use the dataframe Citation_nbr_1s_2_sub_1 because it is the result of merging the dataframes Citation_nbr_mul_2 and Citation_nbr_1s_2 before and we don't need to merge for the number of within-IPC3-class direct forward citations anymore)
+Citation_nbr_mul_2_cor_re <- merge(x=Citation_nbr_1s_2_sub_1, y= Patent_renewals_2, by.x="App_id", by.y="appln_id",
+                                   all.x=TRUE)
+Intensive_2$App_id <- str_replace_all(Intensive_2$App_id, fixed(" "), "")
+Citation_nbr_mul_2_cor_re <- merge(x=Citation_nbr_mul_2_cor_re, y= Intensive_2, by=c("IPC3","App_id") , all.x=TRUE)
+Citation_nbr_mul_2_cor_re <- Citation_nbr_mul_2_cor_re[complete.cases(Citation_nbr_mul_2_cor_re),] 
+Citation_nbr_mul_2_cor_re[,1:2] <- NULL
+names(Citation_nbr_mul_2_cor_re) <- c("Number of within-IPC3-class multi-stage forward citations", "Number of renewals", "Number of within-IPC3-class forward citation stages", "Number of within-IPC3-class direct forward citations") 
+Correlation_2 <- cor(Citation_nbr_mul_2_cor_re, method="spearman")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+kable(Correlation_1, booktabs=TRUE, caption = "Table 1. Correlations between indicators", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+```{r, echo=FALSE}
+kable(Correlation_2, booktabs=TRUE, caption = "Table 2. Correlations between within-IPC3-class indicators", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+The correlation between the number of direct forward citations and the number of multi-stage forward citations is nearly 1 which is very high due to Spearman method. This is similar to part 4.2, which once again confirms that although the number of direct forward citations of a patent does not show its true technological value as efficiently as its number of multi-stage forward citations, a patent having more direct forward citations tends to have more multi-stage forward citations. However, in constrast to part 4.2, the correlation between the number of direct forward citations and the number of forward citation stages is very low (`r cor(Citation_nbr_mul_2_cor_re[,3], Citation_nbr_mul_2_cor_re[,4], method="spearman")`). The correlation between the number of forward citation stages and the other indicators are also low, which means that no matter a patent have many or few direct and multi-stage forward citations, we can not know about its number of forward citation stages and the number of renewals also does not relate to how much distribution a patent has to its technological knowledge fields.
+
+Contrary to part 4.2, surprisingly, the correlation between the number of multi-stage forward citations and the number of renewals and the correlation between the number of direct forward citations and the number of renewals in this part are almost 1 which is very high. This shows very strong support for our hypothesis 2: the patents with more multi-stage forward citations have more patent renewals, but must go with stricter condition of IPC3 class. Moreover, this result also shows significant evidence for our hypothesis 3, which is: the correlation between the number of within-IPC3-class multi-stage forward citations and the number of renewals (`r cor(Citation_nbr_mul_2_cor_re[,1], Citation_nbr_mul_2_cor_re[,2], method="spearman")`) is higher than the correlation between the number of overall multi-stage forward citations and the number of renewals (`r cor(Citation_nbr_mul_1_cor_re[,1], Citation_nbr_mul_1_cor_re[,2], method="spearman")`). This confirms our argument that most of financial benefit created by the patents’ technological field is from forward citations within their technological fields. This difference between 2 correlations can be explained that there are many patents, at some points of time in their timelife, turning out to be technologically valuable out of their technological field. The revenue from this phenomenon does not occur frequently and is not much because most of their out-of-IPC3-class cited citations are indirect citations (which can be proved by the large number of forward-citation stages overall compared to within IPC3 classes). And we all know that indirect forward citations do not pay for the cited patents.
+In this part, the correlation between the number of multi-stage forward citations and the number of renewals is higher than the correlation between the number of direct forward citations and the number of renewals, which implies that more popular patents with higher technological value which is more potential for intensive knowledge development are paid more than patents with temporary technological value. This is, once again, shows that the more technological value a patent has, the more financial benefit it brings to its applicant.
+
+# __6. Conclusion and Acknowledgement__
+
+Technological value is one of the most important property of patents which set knowledge foundation for subsequent innovations and hasten the technological development process. Due to this big role of patents, the rising question is whether patents bring their applicants much financial benefit from their technological value. To answer this question, we analyse the data of patents with at least one inventor in Germany from 1985-2007 provided by OECD Regrat Database with the software R. 
+
+Our results give several main findings. First, the number of direct forward citations of a patent does not show its true technological value as efficiently as its number of multi-stage forward citations. However, there is still a strong correlation between them when a patent having more direct forward citations tends to have more multi-stage forward citations. Second, within their technological fields, the patents with more multi-stage forward citations have more patent renewals, which answer our topic question: Technological value of patents bring their applicants a source of revenue that is much enough for the applicants to have incentives to renew the patents. Based on this finding, we suggest that there should be a policy that a patent should pay not only their direct cited patents but also their within-5-or-so-year multi-stage cited patents. This is to exploit the true technological value of patents and bring as much financial benefit from patents’ technological value to their applicants as it should be. However, out of their technological fields, not only the technological value of a patent does not bring much benefit for its applicant but also that benefit is even smaller than it should be. Finally, most of financial benefit created by the patents’ technological fields is from forward citations within their technological fields. Besides, we also discover that the technological content of patents tends to be more temporarily valuable in their technological fields than out of of their technological fields, and technological fields tends to develop "extensively". Although our seminar is just a small simple work, by those findings, we hope that we contribute to prove that multi-stage forward citations should replace direct forward citations in researches on forward citation analysis and technological field should be taken into account in researches on patents’ technological importance.
+
+Despite our effort, our seminar still has several limits. We relies on the assumption that the applicant would renew a patent when owning the patent generates positive profit from its technological value. In fact, if the patent belongs to a firm and brings huge economic value, the firm tends to keep renewing the patent but does not transfer the patent’s technological content to other inventors. Besides, in calculating process, we discard citing patents that are their cited patents’ multi-stage cited patents without reduce the number of direct forward citations of their cited patents for simplicity. This leads to some small errors in the results. Therefore, further researches should overcome these limits. Moreover, analyzing the overlap in forward citation network resulted from the phenomenon of that 2 patents cite each other can also be an interesting topic for further researches. 
+
+# __7. References__
+
+1. Griliches, Z. (1990). 990.“Patent Statistics as Economic Indicators: A Survey.”. Journal of Economic Literature, 28(4), 66-707.
+2. Jou, J. B. (2018). R&D investment and patent renewal decisions. The Quarterly Review of Economics and Finance, 69, 144-154.
+3. Harhoff, D., Narin, F., Scherer, F. M., & Vopel, K. (1999). Citation frequency and the value of patented inventions. Review of Economics and statistics, 81(3), 511-515.
+4. Nagaoka, S., Motohashi, K., & Goto, A. (2010). Patent statistics as an innovation indicator. In Handbook of the Economics of Innovation (Vol. 2, pp. 1083-1127). North-Holland.
+5. OECD.(2008). OECD Patent Statistics Manual, OECD Publishing, Paris.
+6. R Core Team (2019). R: A language and environment for statistical computing. R Foundation for Statistical
+  Computing, Vienna, Austria. URL https://www.R-project.org/.
+7. RStudio Team (2018). RStudio: Integrated Development for R. RStudio, Inc., Boston, MA URL http://www.rstudio.com/.
+8. Schankerman, M., & Pakes, A. (1986). Estimates of the Value of Patent Rights in European Countries During the Post-1950 Period, 96 ECON. J, 1052-1076.
+9. Von Wartburg, I., Teichert, T., & Rost, K. (2005). Inventive progress measured by multi-stage patent citation analysis. Research Policy, 34(10), 1591-1607.
+
+# __Appendix__
+
+##&nbsp;&nbsp;&nbsp; Appendix A
+
+```{r, echo=FALSE}
+kable(Citation_nbr_mul_1_sum_copy, booktabs=TRUE, caption = "Table 3. The number of stem patents for each type of multi-stage forward citation number", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+##&nbsp;&nbsp;&nbsp; Appendix B
+
+```{r, echo=FALSE}
+kable(Citation_nbr_1s_1_sum_copy, booktabs=TRUE, caption = "Table 4. The number of stem patents for each type of direct forward citation number", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+##&nbsp;&nbsp;&nbsp; Appendix C
+
+```{r, echo=FALSE}
+kable(Intensive_1_sum_copy, booktabs=TRUE, caption = "Table 5. The number of stem patents for each type of forward citation stage number", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+##&nbsp;&nbsp;&nbsp; Appendix D
+
+```{r, echo=FALSE}
+kable(Citation_nbr_mul_2_sum_copy, booktabs=TRUE, caption = "Table 6. The number of stem patents for each type of within-IPC3-class multi-stage forward citation number", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+##&nbsp;&nbsp;&nbsp; Appendix E
+
+```{r, echo=FALSE}
+kable(Citation_nbr_1s_2_sum_copy, booktabs=TRUE, caption = "Table 7. The number of stem patents for each type of within-IPC3-class direct forward citation number", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
+##&nbsp;&nbsp;&nbsp; Appendix F
+
+```{r, echo=FALSE}
+kable(Intensive_statistic_2, booktabs=TRUE, caption = "Table 8. The number of wihin-IPC3-class forward citation stage for each IPC3 class", escape = FALSE) %>% kable_styling(bootstrap_options=c("striped", "hover"), font_size = 11)
+```
+
